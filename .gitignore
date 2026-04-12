@@ -1,0 +1,10 @@
+node_modules
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Backup of nested git repository
+backend/.git_nested_backup
+
