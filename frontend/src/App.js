@@ -6,8 +6,6 @@ import { AuthProvider } from './contexts/AuthContext';
 
 // Components
 import Layout from './components/Layout';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
