@@ -4,7 +4,7 @@ const User = require('../models/User');
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret', {
+  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY || 'fallback-secret', {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
 };
@@ -24,8 +24,8 @@ const register = async (req, res) => {
     const saltRounds = 12;
     const password_hash = await bcrypt.hash(password, saltRounds);
 
-    // Get visitor role ID
-    const visitorRole = await User.getRoleByName('visitor');
+    // Get or create visitor role ID
+    const visitorRole = await User.ensureRole('visitor', 'Can view public content only');
     if (!visitorRole) {
       return res.status(500).json({ message: 'Error setting up user role' });
     }

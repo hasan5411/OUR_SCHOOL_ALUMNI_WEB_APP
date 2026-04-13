@@ -93,6 +93,28 @@ class User {
     }
   }
 
+  // Ensure role exists by name, create it if missing
+  static async ensureRole(roleName, description = '') {
+    try {
+      const existingRole = await this.getRoleByName(roleName);
+      if (existingRole) {
+        return existingRole;
+      }
+
+      const { data, error } = await supabase
+        .from('roles')
+        .insert({ name: roleName, description })
+        .select('id, name')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error ensuring role exists:', error);
+      return null;
+    }
+  }
+
   // Get role by name
   static async getRoleByName(roleName) {
     try {

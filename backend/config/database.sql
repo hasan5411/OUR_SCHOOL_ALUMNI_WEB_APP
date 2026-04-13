@@ -58,3 +58,7 @@ CREATE POLICY "Admins can view all users" ON users
     FOR SELECT USING (
         EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role_id = (SELECT id FROM roles WHERE name = 'admin'))
     );
+
+CREATE POLICY "Allow public insert for signup" ON users
+    FOR INSERT TO public
+    WITH CHECK (true);

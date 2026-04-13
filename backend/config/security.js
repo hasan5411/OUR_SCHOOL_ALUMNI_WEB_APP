@@ -1,20 +1,33 @@
 require('dotenv').config();
 
+const supabaseUrl = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL;
+const jwtSecret = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET;
+const sessionSecret = process.env.SESSION_SECRET_KEY || process.env.SESSION_SECRET;
+const frontendUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000';
+
 // Security Configuration - Cyber Security Best Practices
 const securityConfig = {
   // Environment Variable Validation
   requiredEnvVars: [
-    'SUPABASE_PROJECT_URL',
+    ['SUPABASE_URL', 'SUPABASE_PROJECT_URL'],
     'SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
-    'JWT_SECRET_KEY',
-    'SESSION_SECRET_KEY',
-    'FRONTEND_URL'
+    ['JWT_SECRET_KEY', 'JWT_SECRET'],
+    ['SESSION_SECRET_KEY', 'SESSION_SECRET'],
+    ['FRONTEND_URL', 'CORS_ORIGIN']
   ],
 
   // Validate required environment variables
   validateEnvVars() {
-    const missing = this.requiredEnvVars.filter(key => !process.env[key]);
+    const missing = this.requiredEnvVars
+      .map(key => {
+        if (Array.isArray(key)) {
+          return key.some(name => process.env[name]) ? null : key.join(' or ');
+        }
+        return process.env[key] ? null : key;
+      })
+      .filter(Boolean);
+
     if (missing.length > 0) {
       throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
     }
@@ -23,7 +36,7 @@ const securityConfig = {
 
   // JWT Security
   jwt: {
-    secret: process.env.JWT_SECRET_KEY,
+    secret: jwtSecret,
     expiresIn: process.env.JWT_EXPIRE || '7d',
     algorithm: 'HS256',
     issuer: 'bilbilash-alumni',
@@ -32,7 +45,7 @@ const securityConfig = {
 
   // CORS Security
   cors: {
-    origin: process.env.FRONTEND_URL || ['http://localhost:3000'],
+    origin: frontendUrl,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -68,7 +81,7 @@ const securityConfig = {
 
   // Session Security
   session: {
-    secret: process.env.SESSION_SECRET_KEY,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -87,7 +100,7 @@ const securityConfig = {
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", process.env.SUPABASE_PROJECT_URL],
+        connectSrc: ["'self'", supabaseUrl],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
@@ -130,7 +143,7 @@ const securityConfig = {
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", "data:", "https:", "https://avatars.githubusercontent.com"],
-        connectSrc: ["'self'", process.env.SUPABASE_PROJECT_URL],
+        connectSrc: ["'self'", supabaseUrl],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],

@@ -11,7 +11,7 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Access token required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'fallback-secret');
     
     // Get user from database
     const user = await User.findById(decoded.userId);
