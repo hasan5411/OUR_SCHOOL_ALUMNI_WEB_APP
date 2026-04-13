@@ -6,6 +6,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 // Public routes
 router.post('/register', authController.register);
+router.post('/signup', authController.register); // alias for /register
 router.post('/login', authController.login);
 
 // Protected routes
