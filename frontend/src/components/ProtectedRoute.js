@@ -20,8 +20,10 @@ const ProtectedRoute = ({ children, requiredRole, requireApproved = true }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const userRole = user?.roles?.name || user?.role;
+
   // Check if user is approved (for non-authority users)
-  if (requireApproved && !user?.is_approved && user?.roles?.name !== 'authority') {
+  if (requireApproved && !user?.is_approved && userRole !== 'authority') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -39,7 +41,7 @@ const ProtectedRoute = ({ children, requiredRole, requireApproved = true }) => {
   }
 
   // Check if user has required role
-  if (requiredRole && user?.roles?.name !== requiredRole) {
+  if (requiredRole && userRole !== requiredRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

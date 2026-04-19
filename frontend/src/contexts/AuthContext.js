@@ -158,20 +158,24 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  const getUserRole = () => {
+    return state.user?.roles?.name || state.user?.role;
+  };
+
   // Check user role
   const hasRole = (role) => {
-    return state.user?.roles?.name === role;
+    return getUserRole() === role;
   };
 
   // Check if user is admin or authority
   const isAdmin = () => {
-    const userRole = state.user?.roles?.name;
+    const userRole = getUserRole();
     return userRole === 'admin' || userRole === 'authority';
   };
 
   // Check if user is authority
   const isAuthority = () => {
-    return state.user?.roles?.name === 'authority';
+    return getUserRole() === 'authority';
   };
 
   // Check if user is approved

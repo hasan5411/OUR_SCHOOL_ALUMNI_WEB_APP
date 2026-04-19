@@ -45,15 +45,13 @@ const register = async (req, res) => {
     // Generate token
     const token = generateToken(user.id);
 
+    const { password_hash: _, ...userWithoutPassword } = user;
+
     res.status(201).json({
       message: 'User registered successfully. Please wait for admin approval.',
       user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.roles?.name,
-        is_approved: user.is_approved
+        ...userWithoutPassword,
+        role: userWithoutPassword.roles?.name
       },
       token
     });
@@ -99,13 +97,8 @@ const login = async (req, res) => {
     res.json({
       message: 'Login successful',
       user: {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        first_name: userWithoutPassword.first_name,
-        last_name: userWithoutPassword.last_name,
-        role: userWithoutPassword.roles?.name,
-        is_approved: userWithoutPassword.is_approved,
-        is_active: userWithoutPassword.is_active
+        ...userWithoutPassword,
+        role: userWithoutPassword.roles?.name
       },
       token
     });
@@ -130,16 +123,8 @@ const getProfile = async (req, res) => {
 
     res.json({
       user: {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        first_name: userWithoutPassword.first_name,
-        last_name: userWithoutPassword.last_name,
-        phone: userWithoutPassword.phone,
-        role: userWithoutPassword.roles?.name,
-        is_approved: userWithoutPassword.is_approved,
-        is_active: userWithoutPassword.is_active,
-        created_at: userWithoutPassword.created_at,
-        updated_at: userWithoutPassword.updated_at
+        ...userWithoutPassword,
+        role: userWithoutPassword.roles?.name
       }
     });
   } catch (error) {
