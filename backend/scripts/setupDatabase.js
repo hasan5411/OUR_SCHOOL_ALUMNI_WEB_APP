@@ -63,6 +63,131 @@ const sqlFiles = [
   { name: 'Additional Functions', path: 'config/additionalFunctions.sql' }
 ];
 
+// Split SQL script into executable statements while preserving quoted strings and dollar-quoted blocks
+const splitSQLStatements = (sqlContent) => {
+  const statements = [];
+  let buffer = '';
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+  let dollarQuoteTag = null;
+
+  for (let i = 0; i < sqlContent.length; i++) {
+    const char = sqlContent[i];
+    const next = sqlContent[i + 1];
+
+    if (inLineComment) {
+      buffer += char;
+      if (char === '\n') {
+        inLineComment = false;
+      }
+      continue;
+    }
+
+    if (inBlockComment) {
+      buffer += char;
+      if (char === '*' && next === '/') {
+        buffer += next;
+        i += 1;
+        inBlockComment = false;
+      }
+      continue;
+    }
+
+    if (!inSingleQuote && !inDoubleQuote && !dollarQuoteTag && char === '-' && next === '-') {
+      inLineComment = true;
+      buffer += char;
+      continue;
+    }
+
+    if (!inSingleQuote && !inDoubleQuote && !dollarQuoteTag && char === '/' && next === '*') {
+      inBlockComment = true;
+      buffer += char;
+      continue;
+    }
+
+    if (!inSingleQuote && !inDoubleQuote && !dollarQuoteTag && char === '$') {
+      const tagMatch = sqlContent.slice(i).match(/^\$[A-Za-z0-9_]*\$/);
+      if (tagMatch) {
+        dollarQuoteTag = tagMatch[0];
+        buffer += dollarQuoteTag;
+        i += dollarQuoteTag.length - 1;
+        continue;
+      }
+    }
+
+    if (dollarQuoteTag) {
+      buffer += char;
+      if (sqlContent.slice(i, i + dollarQuoteTag.length) === dollarQuoteTag) {
+        buffer += sqlContent.slice(i + 1, i + dollarQuoteTag.length);
+        i += dollarQuoteTag.length - 1;
+        dollarQuoteTag = null;
+      }
+      continue;
+    }
+
+    if (!inDoubleQuote && char === '\'' && !inSingleQuote) {
+      inSingleQuote = true;
+      buffer += char;
+      continue;
+    }
+
+    if (inSingleQuote) {
+      buffer += char;
+      if (char === '\'' && next !== '\'') {
+        inSingleQuote = false;
+      }
+      continue;
+    }
+
+    if (!inSingleQuote && char === '"' && !inDoubleQuote) {
+      inDoubleQuote = true;
+      buffer += char;
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      buffer += char;
+      if (char === '"') {
+        inDoubleQuote = false;
+      }
+      continue;
+    }
+
+    if (char === ';') {
+      const stmt = buffer.trim();
+      if (stmt.length > 0) {
+        statements.push(stmt);
+      }
+      buffer = '';
+      continue;
+    }
+
+    buffer += char;
+  }
+
+  const finalStatement = buffer.trim();
+  if (finalStatement.length > 0) {
+    statements.push(finalStatement);
+  }
+
+  return statements;
+};
+
+const checkExecSqlFunction = async () => {
+  try {
+    const { error } = await supabase.rpc('exec_sql', { sql_query: 'SELECT 1' });
+    if (error) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    const message = error?.message || '';
+    return message.includes('does not exist') || message.includes('Could not find the function');
+  }
+};
+
 // Execute SQL file
 async function executeSQLFile(filePath, fileName) {
   try {
@@ -77,11 +202,7 @@ async function executeSQLFile(filePath, fileName) {
     
     const sqlContent = fs.readFileSync(fullPath, 'utf8');
     
-    // Split SQL content by semicolons and execute each statement
-    const statements = sqlContent
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+    const statements = splitSQLStatements(sqlContent).filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
     
     let successCount = 0;
     let errorCount = 0;
@@ -92,14 +213,6 @@ async function executeSQLFile(filePath, fileName) {
         const { error } = await supabase.rpc('exec_sql', { sql_query: statement });
         
         if (error) {
-          // If exec_sql doesn't exist, try direct execution
-          const { error: directError } = await supabase.from('_temp').select('*').limit(1);
-          
-          if (directError && directError.code === 'PGRST116') {
-            // Table doesn't exist, try using raw SQL
-            console.log(`${colors.yellow}Note: Using direct SQL execution${colors.reset}`);
-          }
-          
           errors.push({
             statement: statement.substring(0, 100) + '...',
             error: error.message
@@ -188,6 +301,15 @@ async function setupDatabase() {
   const connected = await checkConnection();
   if (!connected) {
     console.log(`${colors.yellow}Connection failed. Please check your Supabase credentials.${colors.reset}`);
+    generateManualInstructions();
+    return;
+  }
+
+  const hasExecSql = await checkExecSqlFunction();
+  if (!hasExecSql) {
+    console.log(`${colors.red}Missing helper function: exec_sql${colors.reset}`);
+    console.log(`${colors.yellow}The project requires the SQL helper function to execute database setup scripts automatically.${colors.reset}`);
+    console.log(`${colors.cyan}Run the contents of backend/config/database.sql manually in your Supabase SQL editor to create the required schema and helper functions.${colors.reset}`);
     generateManualInstructions();
     return;
   }

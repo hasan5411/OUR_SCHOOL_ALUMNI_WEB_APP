@@ -9,7 +9,8 @@
     "test": "jest",
     "setup-db": "node scripts/setupDatabase.js",
     "seed": "node scripts/seedDatabase.js",
-    "debug-auth": "node scripts/debugAuth.js"
+    "debug-auth": "node scripts/debugAuth.js",
+    "test-routes": "node scripts/testRoutes.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",

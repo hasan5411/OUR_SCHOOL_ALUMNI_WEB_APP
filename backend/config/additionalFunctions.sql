@@ -77,24 +77,31 @@ ALTER TABLE vision_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE help_request_supports ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies for vision votes
+DROP POLICY IF EXISTS "Users can view their own vision votes" ON vision_votes;
 CREATE POLICY "Users can view their own vision votes" ON vision_votes
     FOR SELECT USING (auth.uid() = user_id::text);
 
+DROP POLICY IF EXISTS "Users can insert their own vision votes" ON vision_votes;
 CREATE POLICY "Users can insert their own vision votes" ON vision_votes
     FOR INSERT WITH CHECK (auth.uid() = user_id::text);
 
+DROP POLICY IF EXISTS "Users can update their own vision votes" ON vision_votes;
 CREATE POLICY "Users can update their own vision votes" ON vision_votes
     FOR UPDATE USING (auth.uid() = user_id::text);
 
+DROP POLICY IF EXISTS "Users can delete their own vision votes" ON vision_votes;
 CREATE POLICY "Users can delete their own vision votes" ON vision_votes
     FOR DELETE USING (auth.uid() = user_id::text);
 
 -- RLS policies for help request supports
+DROP POLICY IF EXISTS "Users can view their own help request supports" ON help_request_supports;
 CREATE POLICY "Users can view their own help request supports" ON help_request_supports
     FOR SELECT USING (auth.uid() = user_id::text);
 
+DROP POLICY IF EXISTS "Users can insert their own help request supports" ON help_request_supports;
 CREATE POLICY "Users can insert their own help request supports" ON help_request_supports
     FOR INSERT WITH CHECK (auth.uid() = user_id::text);
 
+DROP POLICY IF EXISTS "Users can delete their own help request supports" ON help_request_supports;
 CREATE POLICY "Users can delete their own help request supports" ON help_request_supports
     FOR DELETE USING (auth.uid() = user_id::text);

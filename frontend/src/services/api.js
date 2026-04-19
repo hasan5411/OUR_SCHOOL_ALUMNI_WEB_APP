@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Normalize API base URL so frontend env vars can point to backend root or api root
+const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
+const baseURL = apiUrl.endsWith('/api') ? apiUrl : apiUrl.replace(/\/+$/, '') + '/api';
+
 // Create axios instance
-const baseURL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
 const api = axios.create({
   baseURL,
   timeout: 10000,
