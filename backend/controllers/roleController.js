@@ -49,9 +49,8 @@ const getAdmins = async (req, res) => {
 const approveUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { role_id } = req.body;
     
-    const result = await Role.approveUser(userId, role_id, req.user.id);
+    const result = await Role.approveUser(userId, req.user.roles?.name);
     
     res.status(200).json({
       message: 'User approved successfully',
@@ -69,7 +68,7 @@ const rejectUser = async (req, res) => {
     const { userId } = req.params;
     const { reason } = req.body;
     
-    const result = await Role.rejectUser(userId, reason, req.user.id);
+    const result = await Role.rejectUser(userId, req.user.roles?.name, reason);
     
     res.status(200).json({
       message: 'User rejected successfully',

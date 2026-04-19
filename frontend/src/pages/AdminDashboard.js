@@ -1,7 +1,59 @@
-import React from 'react';
-import { Users, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Shield, CheckCircle, XCircle, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Shield, CheckCircle, XCircle, Clock, Loader } from 'lucide-react';
+import { roleService } from '../services/roleService';
 
 const AdminDashboard = () => {
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [approving, setApproving] = useState(null);
+
+  // Fetch pending users on component mount
+  useEffect(() => {
+    fetchPendingUsers();
+  }, []);
+
+  const fetchPendingUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const users = await roleService.getPendingUsers();
+      setPendingUsers(users);
+    } catch (err) {
+      console.error('Error fetching pending users:', err);
+      setError('Failed to load pending users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveUser = async (userId) => {
+    try {
+      setApproving(userId);
+      await roleService.approveUser(userId, { role_id: null }); // Will use default member role
+      // Remove user from pending list
+      setPendingUsers(prev => prev.filter(user => user.id !== userId));
+    } catch (err) {
+      console.error('Error approving user:', err);
+      setError('Failed to approve user');
+    } finally {
+      setApproving(null);
+    }
+  };
+
+  const handleRejectUser = async (userId) => {
+    try {
+      setApproving(userId);
+      await roleService.rejectUser(userId, { reason: 'Rejected by admin' });
+      // Remove user from pending list
+      setPendingUsers(prev => prev.filter(user => user.id !== userId));
+    } catch (err) {
+      console.error('Error rejecting user:', err);
+      setError('Failed to reject user');
+    } finally {
+      setApproving(null);
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -45,7 +97,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                <p className="text-2xl font-bold text-gray-900">47</p>
+                <p className="text-2xl font-bold text-gray-900">{pendingUsers.length}</p>
                 <p className="text-xs text-gray-500">Awaiting review</p>
               </div>
             </div>
@@ -87,76 +139,73 @@ const AdminDashboard = () => {
                 <h2 className="text-lg font-medium text-gray-900">Pending User Approvals</h2>
               </div>
               <div className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600 font-medium">JD</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">John Doe</p>
-                        <p className="text-sm text-gray-500">john.doe@email.com</p>
-                        <p className="text-xs text-gray-400">Applied 2 days ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="btn btn-primary px-3 py-1 text-sm">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Approve
-                      </button>
-                      <button className="btn btn-outline px-3 py-1 text-sm text-red-600">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Reject
-                      </button>
-                    </div>
+                {error && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {error}
                   </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600 font-medium">SA</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Sarah Anderson</p>
-                        <p className="text-sm text-gray-500">sarah.a@email.com</p>
-                        <p className="text-xs text-gray-400">Applied 3 days ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="btn btn-primary px-3 py-1 text-sm">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Approve
-                      </button>
-                      <button className="btn btn-outline px-3 py-1 text-sm text-red-600">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Reject
-                      </button>
-                    </div>
+                )}
+                
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader className="w-6 h-6 animate-spin mr-2" />
+                    <span>Loading pending users...</span>
                   </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600 font-medium">MJ</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Michael Johnson</p>
-                        <p className="text-sm text-gray-500">michael.j@email.com</p>
-                        <p className="text-xs text-gray-400">Applied 1 week ago</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="btn btn-primary px-3 py-1 text-sm">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Approve
-                      </button>
-                      <button className="btn btn-outline px-3 py-1 text-sm text-red-600">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Reject
-                      </button>
-                    </div>
+                ) : pendingUsers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                    <p>No pending approvals</p>
+                    <p className="text-sm">All users have been reviewed</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingUsers.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                            <span className="text-gray-600 font-medium">
+                              {user.first_name?.[0]}{user.last_name?.[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {user.first_name} {user.last_name}
+                            </p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                            <p className="text-xs text-gray-400">
+                              Applied {new Date(user.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => handleApproveUser(user.id)}
+                            disabled={approving === user.id}
+                            className="btn btn-primary px-3 py-1 text-sm disabled:opacity-50"
+                          >
+                            {approving === user.id ? (
+                              <Loader className="w-4 h-4 animate-spin mr-1" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                            )}
+                            Approve
+                          </button>
+                          <button 
+                            onClick={() => handleRejectUser(user.id)}
+                            disabled={approving === user.id}
+                            className="btn btn-outline px-3 py-1 text-sm text-red-600 disabled:opacity-50"
+                          >
+                            {approving === user.id ? (
+                              <Loader className="w-4 h-4 animate-spin mr-1" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-1" />
+                            )}
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -180,7 +229,7 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Pending Approval</span>
-                        <span className="text-sm font-medium text-yellow-600">47</span>
+                        <span className="text-sm font-medium text-yellow-600">{pendingUsers.length}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Admins</span>
