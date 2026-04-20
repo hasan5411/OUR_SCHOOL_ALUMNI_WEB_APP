@@ -15,6 +15,12 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AuthorityDashboard from './pages/AuthorityDashboard';
+import AlumniDirectory from './pages/AlumniDirectory';
+import JobBoard from './pages/JobBoard';
+import HelpRequests from './pages/HelpRequests';
+import VisionIdeas from './pages/VisionIdeas';
+import Profile from './pages/Profile';
+import Donations from './pages/Donations';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -50,6 +56,56 @@ function App() {
               element={
                 <ProtectedRoute requireApproved={false}>
                   <Layout><AuthorityDashboard /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Additional protected routes */}
+            <Route 
+              path="/alumni-directory" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><AlumniDirectory /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/jobs" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><JobBoard /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/help-requests" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><HelpRequests /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/vision-ideas" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><VisionIdeas /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><Profile /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/donations" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><Donations /></Layout>
                 </ProtectedRoute>
               } 
             />

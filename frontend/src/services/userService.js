@@ -1,6 +1,12 @@
 import api from './api';
 
 export const userService = {
+  // Get current user profile
+  getCurrentProfile: async () => {
+    const response = await api.get('/users/profile');
+    return response.data;
+  },
+
   // Get user profile
   getProfile: async () => {
     const response = await api.get('/users/profile');

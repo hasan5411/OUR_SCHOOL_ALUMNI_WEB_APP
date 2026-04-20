@@ -98,7 +98,7 @@ class Role {
       if (error) throw error;
 
       const currentAdminCount = data?.length || 0;
-      const maxAdmins = 100;
+      const maxAdmins = 100; // Maximum 100 admins as per requirements
 
       return {
         currentCount: currentAdminCount,

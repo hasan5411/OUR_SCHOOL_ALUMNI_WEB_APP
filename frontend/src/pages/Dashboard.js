@@ -1,7 +1,58 @@
-import React from 'react';
-import { User, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { User, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Loader } from 'lucide-react';
+import { userService } from '../services/userService';
+import { jobService } from '../services/jobService';
 
 const Dashboard = () => {
+  const [stats, setStats] = useState({
+    profileViews: 0,
+    jobApplications: 0,
+    eventsAttended: 0,
+    helpRequests: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [profileData, jobAppsData] = await Promise.all([
+        userService.getCurrentUserProfile().catch(() => null),
+        jobService.getUserApplications().catch(() => [])
+      ]);
+
+      setStats({
+        profileViews: profileData?.profile_views || 0,
+        jobApplications: jobAppsData?.length || 0,
+        eventsAttended: 0, // Will be implemented when events feature is added
+        helpRequests: 0 // Will be implemented when help requests feature is added
+      });
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -14,6 +65,14 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -24,7 +83,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Profile Views</p>
-                <p className="text-2xl font-bold text-gray-900">247</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.profileViews}</p>
               </div>
             </div>
           </div>
@@ -36,7 +95,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Job Applications</p>
-                <p className="text-2xl font-bold text-gray-900">12</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.jobApplications}</p>
               </div>
             </div>
           </div>
@@ -48,7 +107,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Events Attended</p>
-                <p className="text-2xl font-bold text-gray-900">8</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.eventsAttended}</p>
               </div>
             </div>
           </div>
@@ -60,7 +119,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Help Requests</p>
-                <p className="text-2xl font-bold text-gray-900">3</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.helpRequests}</p>
               </div>
             </div>
           </div>
@@ -134,11 +193,11 @@ const Dashboard = () => {
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
+                  <Link to="/jobs" className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
                     <Briefcase className="w-6 h-6 text-blue-600 mb-2" />
                     <p className="font-medium text-gray-900">Browse Jobs</p>
                     <p className="text-sm text-gray-500">Find opportunities</p>
-                  </button>
+                  </Link>
                   
                   <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
                     <Calendar className="w-6 h-6 text-purple-600 mb-2" />
@@ -146,17 +205,17 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-500">Join events</p>
                   </button>
                   
-                  <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
+                  <Link to="/help-requests" className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
                     <Heart className="w-6 h-6 text-orange-600 mb-2" />
                     <p className="font-medium text-gray-900">Help Requests</p>
                     <p className="text-sm text-gray-500">Support alumni</p>
-                  </button>
+                  </Link>
                   
-                  <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
+                  <Link to="/alumni-directory" className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
                     <User className="w-6 h-6 text-green-600 mb-2" />
                     <p className="font-medium text-gray-900">Find Alumni</p>
                     <p className="text-sm text-gray-500">Connect network</p>
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

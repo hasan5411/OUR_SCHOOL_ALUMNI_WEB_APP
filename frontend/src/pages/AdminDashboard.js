@@ -4,24 +4,41 @@ import { roleService } from '../services/roleService';
 
 const AdminDashboard = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    pendingApprovals: 0,
+    totalMembers: 0,
+    totalJobs: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [approving, setApproving] = useState(null);
 
-  // Fetch pending users on component mount
+  // Fetch data on component mount
   useEffect(() => {
-    fetchPendingUsers();
+    fetchDashboardData();
   }, []);
 
-  const fetchPendingUsers = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const users = await roleService.getPendingUsers();
+      
+      const [users, roleStats] = await Promise.all([
+        roleService.getPendingUsers().catch(() => []),
+        roleService.getRoleStats().catch(() => ({ total_users: 0, pending_users: 0, total_admins: 0, active_members: 0 }))
+      ]);
+
       setPendingUsers(users);
+      setStats({
+        totalUsers: roleStats.total_users || 0,
+        pendingApprovals: roleStats.pending_users || 0,
+        totalMembers: roleStats.active_members || 0,
+        totalJobs: 0 // Will be updated when job stats are implemented
+      });
     } catch (err) {
-      console.error('Error fetching pending users:', err);
-      setError('Failed to load pending users');
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -30,9 +47,8 @@ const AdminDashboard = () => {
   const handleApproveUser = async (userId) => {
     try {
       setApproving(userId);
-      await roleService.approveUser(userId, { role_id: null }); // Will use default member role
-      // Remove user from pending list
-      setPendingUsers(prev => prev.filter(user => user.id !== userId));
+      await roleService.approveUser(userId, { role_id: null });
+      await fetchDashboardData();
     } catch (err) {
       console.error('Error approving user:', err);
       setError('Failed to approve user');
@@ -45,8 +61,7 @@ const AdminDashboard = () => {
     try {
       setApproving(userId);
       await roleService.rejectUser(userId, { reason: 'Rejected by admin' });
-      // Remove user from pending list
-      setPendingUsers(prev => prev.filter(user => user.id !== userId));
+      await fetchDashboardData();
     } catch (err) {
       console.error('Error rejecting user:', err);
       setError('Failed to reject user');
@@ -54,6 +69,17 @@ const AdminDashboard = () => {
       setApproving(null);
     }
   };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -74,6 +100,14 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -84,8 +118,8 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">1,234</p>
-                <p className="text-xs text-green-600">+12% from last month</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                <p className="text-xs text-green-600">Registered users</p>
               </div>
             </div>
           </div>
@@ -97,8 +131,8 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingUsers.length}</p>
-                <p className="text-xs text-gray-500">Awaiting review</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pendingApprovals}</p>
+                <p className="text-xs text-orange-600">Awaiting review</p>
               </div>
             </div>
           </div>
@@ -106,12 +140,12 @@ const AdminDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-3 bg-green-100 rounded-full">
-                <Briefcase className="h-6 w-6 text-green-600" />
+                <TrendingUp className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Jobs</p>
-                <p className="text-2xl font-bold text-gray-900">89</p>
-                <p className="text-xs text-green-600">+5 this week</p>
+                <p className="text-sm font-medium text-gray-600">Active Members</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalMembers}</p>
+                <p className="text-xs text-green-600">Approved users</p>
               </div>
             </div>
           </div>
@@ -119,12 +153,12 @@ const AdminDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-3 bg-purple-100 rounded-full">
-                <Heart className="h-6 w-6 text-purple-600" />
+                <Briefcase className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Help Requests</p>
-                <p className="text-2xl font-bold text-gray-900">23</p>
-                <p className="text-xs text-orange-600">3 urgent</p>
+                <p className="text-sm font-medium text-gray-600">Job Posts</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalJobs}</p>
+                <p className="text-xs text-gray-500">Total opportunities</p>
               </div>
             </div>
           </div>
@@ -139,18 +173,7 @@ const AdminDashboard = () => {
                 <h2 className="text-lg font-medium text-gray-900">Pending User Approvals</h2>
               </div>
               <div className="p-6">
-                {error && (
-                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                    {error}
-                  </div>
-                )}
-                
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader className="w-6 h-6 animate-spin mr-2" />
-                    <span>Loading pending users...</span>
-                  </div>
-                ) : pendingUsers.length === 0 ? (
+                {pendingUsers.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
                     <p>No pending approvals</p>
@@ -206,133 +229,6 @@ const AdminDashboard = () => {
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* System Overview */}
-            <div className="bg-white shadow rounded-lg mt-8">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">System Overview</h2>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-3">User Statistics</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total Users</span>
-                        <span className="text-sm font-medium">1,234</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Active Users</span>
-                        <span className="text-sm font-medium text-green-600">892</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Pending Approval</span>
-                        <span className="text-sm font-medium text-yellow-600">{pendingUsers.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Admins</span>
-                        <span className="text-sm font-medium">5</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-3">Content Statistics</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Job Posts</span>
-                        <span className="text-sm font-medium">89</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Events</span>
-                        <span className="text-sm font-medium">12</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Help Requests</span>
-                        <span className="text-sm font-medium">23</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Vision Ideas</span>
-                        <span className="text-sm font-medium">15</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Quick Actions */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  <button className="w-full btn btn-primary text-left">
-                    <Users className="w-4 h-4 inline mr-2" />
-                    Manage Users
-                  </button>
-                  <button className="w-full btn btn-outline text-left">
-                    <Briefcase className="w-4 h-4 inline mr-2" />
-                    Review Jobs
-                  </button>
-                  <button className="w-full btn btn-outline text-left">
-                    <Calendar className="w-4 h-4 inline mr-2" />
-                    Create Event
-                  </button>
-                  <button className="w-full btn btn-outline text-left">
-                    <Heart className="w-4 h-4 inline mr-2" />
-                    Help Requests
-                  </button>
-                  <button className="w-full btn btn-outline text-left">
-                    <Settings className="w-4 h-4 inline mr-2" />
-                    System Settings
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <div>
-                      <p className="text-sm text-gray-900">New user registration</p>
-                      <p className="text-xs text-gray-500">5 minutes ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div>
-                      <p className="text-sm text-gray-900">Job posted by Tech Corp</p>
-                      <p className="text-xs text-gray-500">1 hour ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                    <div>
-                      <p className="text-sm text-gray-900">Help request created</p>
-                      <p className="text-xs text-gray-500">2 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                    <div>
-                      <p className="text-sm text-gray-900">Vision idea submitted</p>
-                      <p className="text-xs text-gray-500">3 hours ago</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
