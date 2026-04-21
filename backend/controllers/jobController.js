@@ -362,7 +362,7 @@ const updateApplicationStatus = async (req, res) => {
       .from('job_applications')
       .select(`
         job_post_id,
-        job_posts(posted_by)
+        job_posts!job_applications_job_post_id_fkey(posted_by)
       `)
       .eq('id', applicationId)
       .single();

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Users, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Shield, Crown, CheckCircle, XCircle, AlertTriangle, Database, Key, Loader, RefreshCw } from 'lucide-react';
 import { roleService } from '../services/roleService';
 import { userService } from '../services/userService';
+import { jobService } from '../services/jobService';
+import { visionService } from '../services/visionService';
+import { helpRequestService } from '../services/helpRequestService';
 
 const AuthorityDashboard = () => {
   const [stats, setStats] = useState({
@@ -28,19 +31,25 @@ const AuthorityDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch all data in parallel
-      const [roleStats, pendingData, adminsData] = await Promise.all([
-        roleService.getRoleStats().catch(() => ({ total_users: 0, pending_users: 0, total_admins: 0 })),
+      const [roleStats, pendingData, adminsData, jobStats, visionStats, helpStats] = await Promise.all([
+        roleService.getRoleStats().catch(() => ({ total_users: 0, pending_users: 0, total_admins: 0, active_members: 0 })),
         roleService.getPendingUsers().catch(() => []),
-        roleService.getAdmins().catch(() => [])
+        roleService.getAdmins().catch(() => []),
+        jobService.getJobStats().catch(() => ({ totalJobs: 0, pendingJobs: 0 })),
+        visionService.getVisionStats().catch(() => ({ totalVisions: 0, pendingVisions: 0 })),
+        helpRequestService.getHelpRequestStats().catch(() => ({ totalRequests: 0, pendingRequests: 0 }))
       ]);
 
       setStats({
         totalUsers: roleStats.total_users || 0,
         pendingUsers: roleStats.pending_users || 0,
         totalAdmins: roleStats.total_admins || 0,
-        activeMembers: roleStats.active_members || 0
+        activeMembers: roleStats.active_members || 0,
+        totalJobs: jobStats.totalJobs || 0,
+        totalVisions: visionStats.totalVisions || 0,
+        totalHelpRequests: helpStats.totalRequests || 0
       });
       setPendingUsers(pendingData);
       setAdmins(adminsData);

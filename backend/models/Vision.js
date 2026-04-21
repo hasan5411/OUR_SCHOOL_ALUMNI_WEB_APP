@@ -4,9 +4,18 @@ class Vision {
   // Create new vision idea
   static async createVision(visionData) {
     try {
+      // Set status = 'proposed' by default
+      const visionDataWithDefaults = {
+        ...visionData,
+        status: 'proposed',
+        support_count: 0,
+        opposition_count: 0,
+        progress_percentage: 0
+      };
+
       const { data, error } = await supabase
         .from('vision_ideas')
-        .insert(visionData)
+        .insert(visionDataWithDefaults)
         .select(`
           id,
           title,
@@ -89,25 +98,7 @@ class Vision {
           support_count,
           opposition_count,
           created_at,
-          updated_at,
-          proposed_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          approved_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          assigned_to_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          )
+          updated_at
         `, { count: 'exact' });
 
       // Apply search filter
@@ -178,25 +169,7 @@ class Vision {
           support_count,
           opposition_count,
           created_at,
-          updated_at,
-          proposed_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          approved_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          assigned_to_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          )
+          updated_at
         `)
         .eq('id', visionId)
         .single();

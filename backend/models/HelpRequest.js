@@ -96,25 +96,7 @@ class HelpRequest {
           support_count,
           created_by,
           created_at,
-          updated_at,
-          created_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          verified_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          assigned_to_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          )
+          updated_at
         `, { count: 'exact' });
 
       // Apply search filter
@@ -194,25 +176,7 @@ class HelpRequest {
           support_count,
           created_by,
           created_at,
-          updated_at,
-          created_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          verified_by_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          assigned_to_user(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          )
+          updated_at
         `)
         .eq('id', helpRequestId)
         .single();

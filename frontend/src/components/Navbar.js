@@ -31,7 +31,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-primary-600 via-green-600 to-yellow-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">B</span>
               </div>
               <span className="ml-2 text-xl font-bold text-gray-900">
@@ -46,8 +46,8 @@ const Navbar = () => {
               to="/"
               className={`px-3 py-2 rounded-md text-sm font-medium ${
                 isActive('/') 
-                  ? 'bg-primary-100 text-primary-700' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-green-100 text-green-700' 
+                  : 'text-gray-700 hover:bg-green-100'
               }`}
             >
               <Home className="w-4 h-4 inline mr-1" />
@@ -59,8 +59,8 @@ const Navbar = () => {
                 to={getDashboardRoute()}
                 className={`px-3 py-2 rounded-md text-sm font-medium ${
                   isActive(getDashboardRoute()) 
-                    ? 'bg-primary-100 text-primary-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-green-100 text-green-700' 
+                    : 'text-gray-700 hover:bg-green-100'
                 }`}
               >
                 <User className="w-4 h-4 inline mr-1" />
@@ -89,14 +89,14 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+                  className="px-4 py-2 text-sm font-medium text-green-600 hover:text-green-700"
                 >
                   Login
                 </Link>
                 
                 <Link
                   to="/register"
-                  className="btn btn-primary px-4 py-2 text-sm"
+                  className="btn btn-success px-4 py-2 text-sm"
                 >
                   Register
                 </Link>

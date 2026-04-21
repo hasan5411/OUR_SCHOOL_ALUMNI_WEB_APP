@@ -4,9 +4,16 @@ class Job {
   // Create new job post
   static async createJob(jobData) {
     try {
+      // Set is_active = false by default (requires admin approval)
+      const jobDataWithDefaults = {
+        ...jobData,
+        is_active: false,
+        is_featured: false
+      };
+
       const { data, error } = await supabase
         .from('job_posts')
-        .insert(jobData)
+        .insert(jobDataWithDefaults)
         .select(`
           id,
           title,
@@ -88,13 +95,7 @@ class Job {
           view_count,
           application_count,
           created_at,
-          updated_at,
-          users(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          )
+          updated_at
         `, { count: 'exact' });
 
       // Apply search filter
@@ -176,13 +177,7 @@ class Job {
           view_count,
           application_count,
           created_at,
-          updated_at,
-          users(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          )
+          updated_at
         `)
         .eq('id', jobId)
         .single();
@@ -379,19 +374,7 @@ class Job {
           interview_date,
           interview_notes,
           created_at,
-          updated_at,
-          users(
-            id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          students(
-            id,
-            graduation_year,
-            stream,
-            class
-          )
+          updated_at
         `, { count: 'exact' })
         .eq('job_post_id', jobId);
 
@@ -461,16 +444,7 @@ class Job {
           interview_date,
           interview_notes,
           created_at,
-          updated_at,
-          job_posts(
-            id,
-            title,
-            company,
-            location,
-            job_type,
-            is_active,
-            expires_at
-          )
+          updated_at
         `, { count: 'exact' })
         .eq('applicant_id', userId);
 

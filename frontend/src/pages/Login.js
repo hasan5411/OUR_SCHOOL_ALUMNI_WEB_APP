@@ -10,6 +10,7 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
   const { login, isLoading, error, clearError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,14 +69,20 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
-      await login(formData);
-      // Navigation is handled by the AuthContext and useEffect above
+      const user = await login(formData);
+      // Show success message
+      setSuccessMessage(`Login successful! Welcome back, ${user?.first_name || 'back'}`);
+      // Redirect to dashboard after 1 second delay
+      setTimeout(() => {
+        const from = location.state?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }, 1000);
     } catch (error) {
       // Error is handled by AuthContext
       console.error('Login error:', error);
@@ -107,6 +114,16 @@ const Login = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-green-800">{successMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {errors.general && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <div className="flex">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Shield, CheckCircle, XCircle, Clock, Loader } from 'lucide-react';
 import { roleService } from '../services/roleService';
+import { jobService } from '../services/jobService';
 
 const AdminDashboard = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -23,10 +24,11 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const [users, roleStats] = await Promise.all([
+
+      const [users, roleStats, jobStats] = await Promise.all([
         roleService.getPendingUsers().catch(() => []),
-        roleService.getRoleStats().catch(() => ({ total_users: 0, pending_users: 0, total_admins: 0, active_members: 0 }))
+        roleService.getRoleStats().catch(() => ({ total_users: 0, pending_users: 0, total_admins: 0, active_members: 0 })),
+        jobService.getJobStats().catch(() => ({ totalJobs: 0, pendingJobs: 0 }))
       ]);
 
       setPendingUsers(users);
@@ -34,7 +36,8 @@ const AdminDashboard = () => {
         totalUsers: roleStats.total_users || 0,
         pendingApprovals: roleStats.pending_users || 0,
         totalMembers: roleStats.active_members || 0,
-        totalJobs: 0 // Will be updated when job stats are implemented
+        totalJobs: jobStats.totalJobs || 0,
+        pendingJobs: jobStats.pendingJobs || 0
       });
     } catch (err) {
       console.error('Error fetching dashboard data:', err);

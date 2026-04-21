@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { User, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Loader } from 'lucide-react';
 import { userService } from '../services/userService';
 import { jobService } from '../services/jobService';
+import { helpRequestService } from '../services/helpRequestService';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -23,16 +24,17 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
 
-      const [profileData, jobAppsData] = await Promise.all([
+      const [profileData, jobAppsData, helpRequestsData] = await Promise.all([
         userService.getCurrentUserProfile().catch(() => null),
-        jobService.getUserApplications().catch(() => [])
+        jobService.getUserApplications().catch(() => []),
+        helpRequestService.getUserHelpRequests().catch(() => ({ helpRequests: [] }))
       ]);
 
       setStats({
         profileViews: profileData?.profile_views || 0,
-        jobApplications: jobAppsData?.length || 0,
+        jobApplications: jobAppsData?.applications?.length || 0,
         eventsAttended: 0, // Will be implemented when events feature is added
-        helpRequests: 0 // Will be implemented when help requests feature is added
+        helpRequests: helpRequestsData?.helpRequests?.length || 0
       });
     } catch (err) {
       console.error('Error fetching dashboard data:', err);

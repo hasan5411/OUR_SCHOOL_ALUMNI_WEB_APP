@@ -9,7 +9,7 @@ const Footer = () => {
           {/* School Info */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-4">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-primary-600 via-green-600 to-yellow-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">B</span>
               </div>
               <span className="ml-2 text-xl font-bold">
@@ -24,7 +24,7 @@ const Footer = () => {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-yellow-400 transition-colors"
               >
                 <Facebook className="w-5 h-5" />
               </a>
@@ -32,7 +32,7 @@ const Footer = () => {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-yellow-400 transition-colors"
               >
                 <Twitter className="w-5 h-5" />
               </a>
@@ -40,7 +40,7 @@ const Footer = () => {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 hover:text-yellow-400 transition-colors"
               >
                 <Linkedin className="w-5 h-5" />
               </a>
@@ -52,17 +52,17 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/dashboard" className="text-gray-300 hover:text-yellow-400 transition-colors">
                   Dashboard
                 </a>
               </li>
               <li>
-                <a href="/login" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/login" className="text-gray-300 hover:text-yellow-400 transition-colors">
                   Login
                 </a>
               </li>
               <li>
-                <a href="/register" className="text-gray-300 hover:text-white transition-colors">
+                <a href="/register" className="text-gray-300 hover:text-yellow-400 transition-colors">
                   Register
                 </a>
               </li>
