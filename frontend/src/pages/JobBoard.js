@@ -50,13 +50,21 @@ const JobBoard = () => {
         limit: 20,
         ...filters
       });
-      setJobs(data.jobs || data);
+      // Handle nested response format safely
+      const jobsData = data?.jobs || data?.data || data || [];
+      if (!Array.isArray(jobsData)) {
+        console.error('Jobs data is not an array:', jobsData);
+        setJobs([]);
+        return;
+      }
+      setJobs(jobsData);
       if (data.pagination) {
         setTotalPages(data.pagination.total_pages || 1);
       }
     } catch (err) {
       console.error('Error fetching jobs:', err);
       setError('Failed to load job board');
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -361,7 +369,7 @@ const JobBoard = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-6">
-              {jobs.map((job) => (
+              {Array.isArray(jobs) && jobs.map((job) => (
                 <div key={job.id} className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

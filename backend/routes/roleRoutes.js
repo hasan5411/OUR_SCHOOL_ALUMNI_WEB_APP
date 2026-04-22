@@ -25,6 +25,7 @@ router.post('/bulk-reject', requireAdmin, roleController.bulkRejectUsers);
 // Admin promotion/demotion (authority only)
 router.post('/users/:userId/promote-admin', requireAuthority, roleController.promoteToAdmin);
 router.post('/users/:userId/demote-member', requireAuthority, roleController.demoteToMember);
+router.put('/:id/demote-member', requireAuthority, roleController.demoteToMember);
 
 // Role changes (authority only)
 router.put('/users/:userId/role', requireAuthority, roleController.changeUserRole);

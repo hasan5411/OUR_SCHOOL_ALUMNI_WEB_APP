@@ -19,6 +19,7 @@ import AlumniDirectory from './pages/AlumniDirectory';
 import JobBoard from './pages/JobBoard';
 import HelpRequests from './pages/HelpRequests';
 import VisionIdeas from './pages/VisionIdeas';
+import Events from './pages/Events';
 import Profile from './pages/Profile';
 import Donations from './pages/Donations';
 import NotFound from './pages/NotFound';
@@ -90,6 +91,14 @@ function App() {
               element={
                 <ProtectedRoute requireApproved={true}>
                   <Layout><VisionIdeas /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/events" 
+              element={
+                <ProtectedRoute requireApproved={true}>
+                  <Layout><Events /></Layout>
                 </ProtectedRoute>
               } 
             />

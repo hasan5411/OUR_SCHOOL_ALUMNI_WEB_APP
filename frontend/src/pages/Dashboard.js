@@ -25,7 +25,7 @@ const Dashboard = () => {
       setError(null);
 
       const [profileData, jobAppsData, helpRequestsData] = await Promise.all([
-        userService.getCurrentUserProfile().catch(() => null),
+        userService.getCurrentProfile().catch(() => null),
         jobService.getUserApplications().catch(() => []),
         helpRequestService.getUserHelpRequests().catch(() => ({ helpRequests: [] }))
       ]);
