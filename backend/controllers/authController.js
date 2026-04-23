@@ -4,7 +4,10 @@ const User = require('../models/User');
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY || 'fallback-secret', {
+  if (!process.env.JWT_SECRET_KEY) {
+    throw new Error('JWT_SECRET_KEY is not set in environment variables');
+  }
+  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
 };
@@ -46,12 +49,18 @@ const register = async (req, res) => {
     const token = generateToken(user.id);
 
     const { password_hash: _, ...userWithoutPassword } = user;
+    // Always provide a role, fallback to visitor if missing
+    let roleName = userWithoutPassword.roles?.name;
+    if (!roleName) {
+      roleName = 'visitor'; // fallback, but log a warning
+      console.warn('User role missing in registration response, defaulting to visitor');
+    }
 
     res.status(201).json({
       message: 'User registered successfully. Please wait for admin approval.',
       user: {
         ...userWithoutPassword,
-        role: userWithoutPassword.roles?.name
+        role: roleName
       },
       token
     });
@@ -93,12 +102,18 @@ const login = async (req, res) => {
 
     // Remove password hash from response
     const { password_hash, ...userWithoutPassword } = user;
+    // Always provide a role, fallback to visitor if missing
+    let roleName = userWithoutPassword.roles?.name;
+    if (!roleName) {
+      roleName = 'visitor'; // fallback, but log a warning
+      console.warn('User role missing in login response, defaulting to visitor');
+    }
 
     res.json({
       message: 'Login successful',
       user: {
         ...userWithoutPassword,
-        role: userWithoutPassword.roles?.name
+        role: roleName
       },
       token
     });
