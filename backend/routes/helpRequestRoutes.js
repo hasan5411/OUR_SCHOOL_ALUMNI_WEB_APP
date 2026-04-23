@@ -7,6 +7,12 @@ const { authenticateToken, requireApproved, requireAdmin } = require('../middlew
 // Public routes (any authenticated user can view verified help requests)
 router.get('/', authenticateToken, helpRequestController.getHelpRequests);
 router.get('/stats', authenticateToken, requireAdmin, helpRequestController.getHelpRequestStats);
+
+// User's own help requests - MUST be defined BEFORE dynamic /:helpRequestId routes
+// Otherwise "my-requests" will be treated as a helpRequestId parameter
+router.get('/my-requests', authenticateToken, requireApproved, helpRequestController.getUserHelpRequests);
+
+// Dynamic routes - these catch-all routes must come after static routes
 router.get('/:helpRequestId', authenticateToken, helpRequestController.getHelpRequestById);
 
 // Help request management (member and above for creation, owner/admin for update/delete)
@@ -24,8 +30,5 @@ router.put('/:helpRequestId/amount', authenticateToken, requireApproved, helpReq
 
 // Support (member and above)
 router.post('/:helpRequestId/support', authenticateToken, requireApproved, helpRequestController.supportHelpRequest);
-
-// User's own help requests
-router.get('/my-requests', authenticateToken, requireApproved, helpRequestController.getUserHelpRequests);
 
 module.exports = router;

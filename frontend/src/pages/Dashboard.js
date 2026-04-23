@@ -14,12 +14,15 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState({}); // For debugging
+  const [showDebug, setShowDebug] = useState(false); // Toggle debug panel
 
   useEffect(() => {
     fetchDashboardData();
     
     // Auto-refresh when window gains focus (after posting data)
     const handleFocus = () => {
+      console.log('[Dashboard] Window focused, refreshing data...');
       fetchDashboardData();
     };
     
@@ -29,6 +32,7 @@ const Dashboard = () => {
 
   // Manual refresh handler
   const handleRefresh = () => {
+    console.log('[Dashboard] Manual refresh triggered');
     fetchDashboardData();
   };
 
@@ -37,21 +41,79 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
 
-      const [profileData, jobAppsData, helpRequestsData] = await Promise.all([
-        userService.getCurrentProfile().catch(() => null),
-        jobService.getUserApplications().catch(() => []),
-        helpRequestService.getUserHelpRequests().catch(() => ({ helpRequests: [] }))
+      console.log('[Dashboard] Fetching dashboard data...');
+
+      // Fetch all data in parallel with individual error handling
+      const [profileResult, jobAppsResult, helpRequestsResult] = await Promise.all([
+        userService.getCurrentProfile()
+          .then(data => ({ success: true, data }))
+          .catch(err => {
+            console.error('[Dashboard] Profile fetch error:', err);
+            return { success: false, error: err.message, data: null };
+          }),
+        
+        jobService.getUserApplications()
+          .then(data => ({ success: true, data }))
+          .catch(err => {
+            console.error('[Dashboard] Job applications fetch error:', err);
+            return { success: false, error: err.message, data: [] };
+          }),
+        
+        helpRequestService.getUserHelpRequests()
+          .then(data => {
+            console.log('[Dashboard] Help requests response:', data);
+            return { success: true, data };
+          })
+          .catch(err => {
+            console.error('[Dashboard] Help requests fetch error:', err);
+            return { success: false, error: err.message, data: { helpRequests: [] } };
+          })
       ]);
 
-      setStats({
-        profileViews: profileData?.profile_views || 0,
-        jobApplications: jobAppsData?.applications?.length || 0,
+      // Log debug info
+      const debugData = {
+        profile: profileResult,
+        jobApps: jobAppsResult,
+        helpRequests: helpRequestsResult,
+        timestamp: new Date().toISOString()
+      };
+      setDebugInfo(debugData);
+      console.log('[Dashboard] Debug info:', debugData);
+
+      // Extract data safely
+      const profileData = profileResult.data;
+      const jobAppsData = jobAppsResult.data;
+      const helpRequestsData = helpRequestsResult.data;
+
+      // Handle different response structures for help requests
+      const helpRequestsArray = helpRequestsData?.helpRequests 
+        || helpRequestsData?.data?.helpRequests 
+        || helpRequestsData?.data 
+        || [];
+
+      console.log('[Dashboard] Processed help requests:', helpRequestsArray);
+
+      // Build errors array
+      const errors = [];
+      if (!profileResult.success) errors.push(`Profile: ${profileResult.error}`);
+      if (!jobAppsResult.success) errors.push(`Jobs: ${jobAppsResult.error}`);
+      if (!helpRequestsResult.success) errors.push(`Help Requests: ${helpRequestsResult.error}`);
+
+      if (errors.length > 0) {
+        setError(`Some data failed to load: ${errors.join(', ')}`);
+      }
+
+      // Update stats - preserve previous values if fetch failed
+      setStats(prevStats => ({
+        profileViews: profileData?.profile_views ?? prevStats.profileViews,
+        jobApplications: jobAppsData?.applications?.length ?? jobAppsData?.length ?? prevStats.jobApplications,
         eventsAttended: 0, // Will be implemented when events feature is added
-        helpRequests: helpRequestsData?.helpRequests?.length || 0
-      });
+        helpRequests: Array.isArray(helpRequestsArray) ? helpRequestsArray.length : prevStats.helpRequests
+      }));
+
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-      setError('Failed to load dashboard data');
+      console.error('[Dashboard] Unexpected error fetching dashboard data:', err);
+      setError(`Failed to load dashboard data: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -78,25 +140,52 @@ const Dashboard = () => {
               <h1 className="text-2xl font-bold text-slate-900">Member Dashboard</h1>
               <p className="text-slate-600 mt-1">Welcome back! Here's what's happening in your alumni community.</p>
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="btn btn-secondary px-4 py-2 flex items-center gap-2"
-            >
-              <Loader className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
+            <div className="flex items-center gap-2">
+              {loading && (
+                <span className="text-sm text-slate-500 flex items-center gap-2">
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Loading...
+                </span>
+              )}
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="btn btn-secondary px-4 py-2 flex items-center gap-2"
+              >
+                <Loader className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-sm text-red-700 font-medium">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full bg-red-500 flex-shrink-0 mt-0.5"></div>
+            <div className="flex-1">
+              <p className="text-sm text-red-700 font-medium">{error}</p>
+              <p className="text-xs text-red-600 mt-1">Check browser console (F12) for detailed error logs.</p>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Debug Panel */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+        </button>
+        {showDebug && (
+          <div className="mt-2 p-4 bg-slate-800 rounded-xl text-xs font-mono text-green-400 overflow-auto max-h-96">
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </div>
+        )}
+      </div>
 
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
