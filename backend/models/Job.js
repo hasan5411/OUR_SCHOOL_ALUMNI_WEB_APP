@@ -460,7 +460,20 @@ class Job {
 
       const { data: applications, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Job.getUserApplications] Supabase error:', error);
+        // Return empty result instead of throwing to prevent dashboard crash
+        return {
+          applications: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            pages: 0
+          },
+          _error: error.message // Include error for debugging
+        };
+      }
 
       return {
         applications: applications || [],
@@ -472,8 +485,18 @@ class Job {
         }
       };
     } catch (error) {
-      console.error('Error getting user applications:', error);
-      throw error;
+      console.error('[Job.getUserApplications] Unexpected error:', error);
+      // Return empty result instead of throwing
+      return {
+        applications: [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: 0,
+          pages: 0
+        },
+        _error: error.message
+      };
     }
   }
 

@@ -339,15 +339,26 @@ const getUserApplications = async (req, res) => {
       application_status: req.query.application_status
     };
 
+    console.log('[JobController] Fetching user applications for user:', req.user.id);
+
     const result = await Job.getUserApplications(req.user.id, filters);
+
+    // Log if there's an error in the result
+    if (result._error) {
+      console.error('[JobController] Model returned error:', result._error);
+    }
 
     res.json({
       message: 'User applications retrieved successfully',
       ...result
     });
   } catch (error) {
-    console.error('Get user applications error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('[JobController] Get user applications error:', error);
+    res.status(500).json({ 
+      message: 'Internal server error', 
+      error: error.message,
+      hint: 'Check server logs for details'
+    });
   }
 };
 
