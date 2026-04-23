@@ -34,7 +34,7 @@ const Navbar = () => {
               <div className="w-10 h-10 bg-gradient-mixed rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:shadow-xl group-hover:shadow-primary-500/30 transition-all duration-300">
                 <span className="text-white font-bold text-xl">B</span>
               </div>
-              <span className="ml-3 text-xl font-bold text-gradient-mixed">
+              <span className="ml-3 text-xl font-bold text-slate-800 group-hover:text-primary-600 transition-colors duration-300">
                 Bilbilash Alumni
               </span>
             </Link>

@@ -258,7 +258,8 @@ class User {
         }
       }
 
-      const { data, error } = await supabase
+      // First get user data without students relation
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select(`
           id,
@@ -272,8 +273,19 @@ class User {
           profile_image_url,
           created_at,
           updated_at,
-          roles(name),
-          students(
+          roles(name)
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      // Try to get student data separately (may fail if column doesn't exist)
+      let studentData = null;
+      try {
+        const { data: studentResult, error: studentError } = await supabase
+          .from('students')
+          .select(`
             id,
             student_id,
             admission_number,
@@ -292,12 +304,23 @@ class User {
             emergency_contact_phone,
             parent_guardian_name,
             parent_guardian_phone
-          )
-        `)
-        .eq('id', userId)
-        .single();
+          `)
+          .eq('user_id', userId)
+          .single();
+        
+        if (!studentError) {
+          studentData = studentResult;
+        }
+      } catch (studentErr) {
+        console.warn('Student data fetch failed (column may not exist):', studentErr.message);
+        studentData = null;
+      }
 
-      if (error) throw error;
+      // Combine user data with student data
+      const data = {
+        ...userData,
+        students: studentData
+      };
 
       // Remove sensitive information for non-admin users
       if (requestingUserRole !== 'admin' && requestingUserRole !== 'authority') {

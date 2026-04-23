@@ -29,6 +29,12 @@ const upload = multer({
 // Public routes (any authenticated user can view jobs)
 router.get('/', authenticateToken, jobController.getJobPosts);
 router.get('/stats', authenticateToken, requireAdmin, jobController.getJobStats);
+
+// Static routes MUST be defined before dynamic routes
+// Job applications - static routes (must come before /:jobId)
+router.get('/my-applications', authenticateToken, requireApproved, jobController.getUserApplications);
+
+// Dynamic routes - these catch-all routes must come after static routes
 router.get('/:jobId', authenticateToken, jobController.getJobById);
 
 // Job post management (member and above for creation, owner/admin for update/delete)
@@ -41,7 +47,6 @@ router.put('/:jobId/approve', authenticateToken, requireAdmin, jobController.app
 
 // Job applications (member and above)
 router.post('/:jobId/apply', authenticateToken, requireApproved, jobController.applyForJob);
-router.get('/my-applications', authenticateToken, requireApproved, jobController.getUserApplications);
 
 // CV upload for applications
 router.post('/applications/:applicationId/cv', authenticateToken, requireApproved, upload.single('cv'), jobController.uploadCV);
