@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Briefcase, Calendar, Heart, TrendingUp, Bell, Settings, Loader } from 'lucide-react';
 import { userService } from '../services/userService';
@@ -10,6 +10,7 @@ const Dashboard = () => {
     jobPosts: 0,
     helpRequests: 0,
     visionIdeas: 0,
+    applications: 0,
     eventsAttended: 0
   });
   const [loading, setLoading] = useState(true);
@@ -17,62 +18,72 @@ const Dashboard = () => {
   const [debugInfo, setDebugInfo] = useState({}); // For debugging
   const [showDebug, setShowDebug] = useState(false); // Toggle debug panel
 
-  useEffect(() => {
-    fetchDashboardData();
-    
-    // Auto-refresh when window gains focus (after posting data)
-    const handleFocus = () => {
-      console.log('[Dashboard] Window focused, refreshing data...');
-      fetchDashboardData();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  // Manual refresh handler
-  const handleRefresh = () => {
-    console.log('[Dashboard] Manual refresh triggered');
-    fetchDashboardData();
-  };
-
-  const fetchDashboardData = async () => {
+  // Wrap fetchDashboardData in useCallback to avoid re-creation on every render
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
       console.log('[Dashboard] Fetching dashboard data...');
 
-      // Fetch dashboard stats from new endpoint
       const token = localStorage.getItem('token');
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      
-      const statsResponse = await fetch(`${API_URL}/dashboard/stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      const statsData = await statsResponse.json();
+
+      // Fetch all data in parallel
+      const [statsRes, jobsRes, helpRes, profileRes] = await Promise.all([
+        fetch(`${API_URL}/dashboard/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/jobs/my-applications`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/help-requests/my-requests`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        userService.getCurrentProfile().catch(() => null)
+      ]);
+
+      // Parse stats response
+      const statsData = await statsRes.json();
       console.log('[Dashboard] Stats response:', statsData);
 
+      // Parse jobs applications response
+      const jobsData = await jobsRes.json();
+      console.log('[Dashboard] Jobs applications response:', jobsData);
+      const applicationsCount = jobsData?.applications?.length || jobsData?.data?.applications?.length || jobsData?.data?.length || 0;
+
+      // Parse help requests response
+      const helpData = await helpRes.json();
+      console.log('[Dashboard] Help requests response:', helpData);
+      console.log('[Dashboard] Help requests data structure:', {
+        hasData: !!helpData,
+        hasDataData: !!helpData?.data,
+        hasHelpRequests: !!helpData?.data?.helpRequests,
+        isArray: Array.isArray(helpData?.data?.helpRequests),
+        arrayLength: Array.isArray(helpData?.data?.helpRequests) ? helpData.data.helpRequests.length : 'N/A'
+      });
+      const helpRequestsArray = helpData?.data?.helpRequests || helpData?.data || [];
+      const helpRequestsCount = Array.isArray(helpRequestsArray) ? helpRequestsArray.length : 0;
+
+      // Update stats with real data
       if (statsData.success) {
         setStats({
           jobPosts: statsData.data.jobPosts || 0,
           helpRequests: statsData.data.helpRequests || 0,
           visionIdeas: statsData.data.visionIdeas || 0,
-          eventsAttended: 0 // Will be implemented when events feature is added
+          applications: applicationsCount,
+          eventsAttended: 0 // Will be implemented when events feature is ready
         });
       } else {
         setError(statsData.message || 'Failed to load dashboard stats');
       }
 
-      // Still fetch profile for user info
-      const profileData = await userService.getCurrentProfile().catch(() => null);
-      console.log('[Dashboard] Profile data:', profileData);
-
       // Update debug info
       setDebugInfo({
         stats: statsData,
-        profile: profileData,
+        jobs: jobsData,
+        help: helpData,
+        profile: profileRes,
         timestamp: new Date().toISOString()
       });
 
@@ -82,7 +93,19 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Manual refresh handler
+  const handleRefresh = () => {
+    console.log('[Dashboard] Manual refresh triggered');
+    fetchDashboardData();
   };
+
+  // fetchDashboardData is now wrapped in useCallback above
 
   if (loading) {
     return (
@@ -154,7 +177,7 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div className="card card-hover p-6">
             <div className="flex items-center">
               <div className="p-3 bg-primary-100 rounded-full">
@@ -163,6 +186,18 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-slate-600">Job Posts</p>
                 <p className="text-2xl font-bold text-slate-900">{stats.jobPosts}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card card-hover p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Briefcase className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600">Applications</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.applications}</p>
               </div>
             </div>
           </div>
@@ -214,53 +249,8 @@ const Dashboard = () => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Briefcase className="w-4 h-4 text-blue-600" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">You applied for <span className="font-medium">Senior Developer</span> position</p>
-                      <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <Heart className="w-4 h-4 text-green-600" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">You supported <span className="font-medium">Help Request: Medical Fund</span></p>
-                      <p className="text-xs text-gray-500 mt-1">1 day ago</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-purple-600" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">You registered for <span className="font-medium">Annual Reunion 2024</span></p>
-                      <p className="text-xs text-gray-500 mt-1">3 days ago</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-orange-600" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">Your profile was viewed by <span className="font-medium">5 alumni</span></p>
-                      <p className="text-xs text-gray-500 mt-1">1 week ago</p>
-                    </div>
-                  </div>
+                  {/* TODO: Replace with real recent activity from API if available */}
+                  <div className="text-sm text-gray-500">No recent activity to display.</div>
                 </div>
               </div>
             </div>
