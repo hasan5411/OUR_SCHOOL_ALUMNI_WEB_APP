@@ -18,7 +18,7 @@ class Event {
     try {
       let query = supabase
         .from('events')
-        .select('*', { count: 'exact' });
+        .select('id, title, description, event_type, status, start_date, end_date, location, is_online, online_link, max_attendees, current_attendees, is_free, ticket_price, image_url, is_active, is_featured, created_by, created_at', { count: 'exact' });
 
       // Apply filters
       if (filters.status) {
@@ -26,9 +26,6 @@ class Event {
       }
       if (filters.event_type) {
         query = query.eq('event_type', filters.event_type);
-      }
-      if (filters.virtual_event !== undefined) {
-        query = query.eq('virtual_event', filters.virtual_event);
       }
       if (filters.organizer_id) {
         query = query.eq('organizer_id', filters.organizer_id);
@@ -42,10 +39,10 @@ class Event {
 
       // Date range filter
       if (filters.start_date) {
-        query = query.gte('event_date', filters.start_date);
+        query = query.gte('start_date', filters.start_date);
       }
       if (filters.end_date) {
-        query = query.lte('event_date', filters.end_date);
+        query = query.lte('start_date', filters.end_date);
       }
 
       // Sorting
@@ -54,7 +51,7 @@ class Event {
         const ascending = filters.sort_order === 'desc' ? false : true;
         query = query.order(column, { ascending });
       } else {
-        query = query.order('event_date', { ascending: true });
+        query = query.order('start_date', { ascending: true });
       }
 
       // Pagination
