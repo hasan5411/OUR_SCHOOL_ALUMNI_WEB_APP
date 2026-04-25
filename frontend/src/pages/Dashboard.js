@@ -7,10 +7,10 @@ import { helpRequestService } from '../services/helpRequestService';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
-    profileViews: 0,
-    jobApplications: 0,
-    eventsAttended: 0,
-    helpRequests: 0
+    jobPosts: 0,
+    helpRequests: 0,
+    visionIdeas: 0,
+    eventsAttended: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,76 +43,41 @@ const Dashboard = () => {
 
       console.log('[Dashboard] Fetching dashboard data...');
 
-      // Fetch all data in parallel with individual error handling
-      const [profileResult, jobAppsResult, helpRequestsResult] = await Promise.all([
-        userService.getCurrentProfile()
-          .then(data => ({ success: true, data }))
-          .catch(err => {
-            console.error('[Dashboard] Profile fetch error:', err);
-            return { success: false, error: err.message, data: null };
-          }),
-        
-        jobService.getUserApplications()
-          .then(data => ({ success: true, data }))
-          .catch(err => {
-            console.error('[Dashboard] Job applications fetch error:', err);
-            return { success: false, error: err.message, data: [] };
-          }),
-        
-        helpRequestService.getUserHelpRequests()
-          .then(data => {
-            console.log('[Dashboard] Help requests response:', data);
-            return { success: true, data };
-          })
-          .catch(err => {
-            console.error('[Dashboard] Help requests fetch error:', err);
-            return { success: false, error: err.message, data: { helpRequests: [] } };
-          })
-      ]);
+      // Fetch dashboard stats from new endpoint
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
+      const statsResponse = await fetch(`${API_URL}/dashboard/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const statsData = await statsResponse.json();
+      console.log('[Dashboard] Stats response:', statsData);
 
-      // Log debug info
-      const debugData = {
-        profile: profileResult,
-        jobApps: jobAppsResult,
-        helpRequests: helpRequestsResult,
-        timestamp: new Date().toISOString()
-      };
-      setDebugInfo(debugData);
-      console.log('[Dashboard] Debug info:', debugData);
-
-      // Extract data safely
-      const profileData = profileResult.data;
-      const jobAppsData = jobAppsResult.data;
-      const helpRequestsData = helpRequestsResult.data;
-
-      // Handle different response structures for help requests
-      const helpRequestsArray = helpRequestsData?.helpRequests 
-        || helpRequestsData?.data?.helpRequests 
-        || helpRequestsData?.data 
-        || [];
-
-      console.log('[Dashboard] Processed help requests:', helpRequestsArray);
-
-      // Build errors array
-      const errors = [];
-      if (!profileResult.success) errors.push(`Profile: ${profileResult.error}`);
-      if (!jobAppsResult.success) errors.push(`Jobs: ${jobAppsResult.error}`);
-      if (!helpRequestsResult.success) errors.push(`Help Requests: ${helpRequestsResult.error}`);
-
-      if (errors.length > 0) {
-        setError(`Some data failed to load: ${errors.join(', ')}`);
+      if (statsData.success) {
+        setStats({
+          jobPosts: statsData.data.jobPosts || 0,
+          helpRequests: statsData.data.helpRequests || 0,
+          visionIdeas: statsData.data.visionIdeas || 0,
+          eventsAttended: 0 // Will be implemented when events feature is added
+        });
+      } else {
+        setError(statsData.message || 'Failed to load dashboard stats');
       }
 
-      // Update stats - preserve previous values if fetch failed
-      setStats(prevStats => ({
-        profileViews: profileData?.profile_views ?? prevStats.profileViews,
-        jobApplications: jobAppsData?.applications?.length ?? jobAppsData?.length ?? prevStats.jobApplications,
-        eventsAttended: 0, // Will be implemented when events feature is added
-        helpRequests: Array.isArray(helpRequestsArray) ? helpRequestsArray.length : prevStats.helpRequests
-      }));
+      // Still fetch profile for user info
+      const profileData = await userService.getCurrentProfile().catch(() => null);
+      console.log('[Dashboard] Profile data:', profileData);
+
+      // Update debug info
+      setDebugInfo({
+        stats: statsData,
+        profile: profileData,
+        timestamp: new Date().toISOString()
+      });
 
     } catch (err) {
-      console.error('[Dashboard] Unexpected error fetching dashboard data:', err);
+      console.error('[Dashboard] Error fetching dashboard data:', err);
       setError(`Failed to load dashboard data: ${err.message}`);
     } finally {
       setLoading(false);
@@ -193,35 +158,11 @@ const Dashboard = () => {
           <div className="card card-hover p-6">
             <div className="flex items-center">
               <div className="p-3 bg-primary-100 rounded-full">
-                <User className="h-6 w-6 text-primary-600" />
+                <Briefcase className="h-6 w-6 text-primary-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-slate-600">Profile Views</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.profileViews}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card card-hover p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-emerald-100 rounded-full">
-                <Briefcase className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-slate-600">Job Applications</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.jobApplications}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card card-hover p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-secondary-100 rounded-full">
-                <Calendar className="h-6 w-6 text-secondary-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-slate-600">Events Attended</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.eventsAttended}</p>
+                <p className="text-sm font-medium text-slate-600">Job Posts</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.jobPosts}</p>
               </div>
             </div>
           </div>
@@ -234,6 +175,30 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-slate-600">Help Requests</p>
                 <p className="text-2xl font-bold text-slate-900">{stats.helpRequests}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card card-hover p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-secondary-100 rounded-full">
+                <TrendingUp className="h-6 w-6 text-secondary-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600">Vision Ideas</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.visionIdeas}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card card-hover p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-emerald-100 rounded-full">
+                <Calendar className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600">Events Attended</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.eventsAttended}</p>
               </div>
             </div>
           </div>

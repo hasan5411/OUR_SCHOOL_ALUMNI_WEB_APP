@@ -15,67 +15,94 @@ class Event {
 
   // Get all events with filters
   static async getEvents(filters = {}) {
-    let query = supabase
-      .from('events')
-      .select('*');
+    try {
+      let query = supabase
+        .from('events')
+        .select('*', { count: 'exact' });
 
-    // Apply filters
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters.event_type) {
-      query = query.eq('event_type', filters.event_type);
-    }
-    if (filters.virtual_event !== undefined) {
-      query = query.eq('virtual_event', filters.virtual_event);
-    }
-    if (filters.organizer_id) {
-      query = query.eq('organizer_id', filters.organizer_id);
-    }
-    if (filters.created_by) {
-      query = query.eq('created_by', filters.created_by);
-    }
-    if (filters.search) {
-      query = query.ilike('title', `%${filters.search}%`);
-    }
-
-    // Date range filter
-    if (filters.start_date) {
-      query = query.gte('event_date', filters.start_date);
-    }
-    if (filters.end_date) {
-      query = query.lte('event_date', filters.end_date);
-    }
-
-    // Sorting
-    if (filters.sort_by) {
-      const column = filters.sort_by;
-      const ascending = filters.sort_order === 'desc' ? false : true;
-      query = query.order(column, { ascending });
-    } else {
-      query = query.order('event_date', { ascending: true });
-    }
-
-    // Pagination
-    if (filters.page && filters.limit) {
-      const from = (filters.page - 1) * filters.limit;
-      const to = from + filters.limit - 1;
-      query = query.range(from, to);
-    }
-
-    const { data, error, count } = await query;
-
-    if (error) throw error;
-
-    return {
-      events: data,
-      pagination: {
-        page: filters.page || 1,
-        limit: filters.limit || 10,
-        total: count || 0,
-        total_pages: Math.ceil((count || 0) / (filters.limit || 10))
+      // Apply filters
+      if (filters.status) {
+        query = query.eq('status', filters.status);
       }
-    };
+      if (filters.event_type) {
+        query = query.eq('event_type', filters.event_type);
+      }
+      if (filters.virtual_event !== undefined) {
+        query = query.eq('virtual_event', filters.virtual_event);
+      }
+      if (filters.organizer_id) {
+        query = query.eq('organizer_id', filters.organizer_id);
+      }
+      if (filters.created_by) {
+        query = query.eq('created_by', filters.created_by);
+      }
+      if (filters.search) {
+        query = query.ilike('title', `%${filters.search}%`);
+      }
+
+      // Date range filter
+      if (filters.start_date) {
+        query = query.gte('event_date', filters.start_date);
+      }
+      if (filters.end_date) {
+        query = query.lte('event_date', filters.end_date);
+      }
+
+      // Sorting
+      if (filters.sort_by) {
+        const column = filters.sort_by;
+        const ascending = filters.sort_order === 'desc' ? false : true;
+        query = query.order(column, { ascending });
+      } else {
+        query = query.order('event_date', { ascending: true });
+      }
+
+      // Pagination
+      if (filters.page && filters.limit) {
+        const from = (filters.page - 1) * filters.limit;
+        const to = from + filters.limit - 1;
+        query = query.range(from, to);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('[Event.getEvents] Supabase error:', error);
+        // Return empty result instead of throwing
+        return {
+          events: [],
+          pagination: {
+            page: filters.page || 1,
+            limit: filters.limit || 10,
+            total: 0,
+            total_pages: 0
+          },
+          _error: error.message
+        };
+      }
+
+      return {
+        events: data || [],
+        pagination: {
+          page: filters.page || 1,
+          limit: filters.limit || 10,
+          total: count || 0,
+          total_pages: Math.ceil((count || 0) / (filters.limit || 10))
+        }
+      };
+    } catch (error) {
+      console.error('[Event.getEvents] Unexpected error:', error);
+      return {
+        events: [],
+        pagination: {
+          page: filters.page || 1,
+          limit: filters.limit || 10,
+          total: 0,
+          total_pages: 0
+        },
+        _error: error.message
+      };
+    }
   }
 
   // Get event by ID

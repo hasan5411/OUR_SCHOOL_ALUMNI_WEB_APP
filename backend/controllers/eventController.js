@@ -61,6 +61,8 @@ const getEvents = async (req, res) => {
       sort_order: req.query.sort_order
     };
 
+    console.log('[EventController] Fetching events with filters:', filters);
+
     // Non-admin users can only see upcoming/ongoing events
     if (req.user.roles?.name !== 'admin' && req.user.roles?.name !== 'authority') {
       filters.status = filters.status || 'upcoming';
@@ -68,13 +70,22 @@ const getEvents = async (req, res) => {
 
     const result = await Event.getEvents(filters);
 
+    // Log if there's an error in the result
+    if (result._error) {
+      console.error('[EventController] Model returned error:', result._error);
+    }
+
     res.json({
       message: 'Events retrieved successfully',
       ...result
     });
   } catch (error) {
-    console.error('Get events error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('[EventController] Get events error:', error);
+    res.status(500).json({ 
+      message: 'Internal server error',
+      error: error.message,
+      hint: 'Check server logs for details'
+    });
   }
 };
 
