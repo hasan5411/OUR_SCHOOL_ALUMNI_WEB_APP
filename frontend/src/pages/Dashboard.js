@@ -13,6 +13,7 @@ const Dashboard = () => {
     applications: 0,
     eventsAttended: 0
   });
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState({}); // For debugging
@@ -30,8 +31,11 @@ const Dashboard = () => {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
       // Fetch all data in parallel
-      const [statsRes, jobsRes, helpRes, profileRes] = await Promise.all([
+      const [statsRes, activityRes, jobsRes, helpRes, profileRes] = await Promise.all([
         fetch(`${API_URL}/dashboard/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/dashboard/activity`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_URL}/jobs/my-applications`, {
@@ -46,6 +50,13 @@ const Dashboard = () => {
       // Parse stats response
       const statsData = await statsRes.json();
       console.log('[Dashboard] Stats response:', statsData);
+
+      // Parse activity response
+      const activityData = await activityRes.json();
+      console.log('[Dashboard] Activity response:', activityData);
+      if (activityData.success) {
+        setActivities(activityData.data || []);
+      }
 
       // Parse jobs applications response
       const jobsData = await jobsRes.json();
@@ -81,6 +92,7 @@ const Dashboard = () => {
       // Update debug info
       setDebugInfo({
         stats: statsData,
+        activity: activityData,
         jobs: jobsData,
         help: helpData,
         profile: profileRes,
@@ -249,8 +261,31 @@ const Dashboard = () => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {/* TODO: Replace with real recent activity from API if available */}
-                  <div className="text-sm text-gray-500">No recent activity to display.</div>
+                  {activities.length === 0 ? (
+                    <div className="text-sm text-gray-500">No recent activity to display.</div>
+                  ) : (
+                    activities.map((activity, index) => (
+                      <div key={index} className="flex items-start space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            activity.type === 'job' ? 'bg-blue-100' : 'bg-green-100'
+                          }`}>
+                            {activity.type === 'job' ? (
+                              <Briefcase className="w-4 h-4 text-blue-600" />
+                            ) : (
+                              <Heart className="w-4 h-4 text-green-600" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900">{activity.message}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(activity.date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

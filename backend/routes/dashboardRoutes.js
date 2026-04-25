@@ -54,4 +54,65 @@ router.get('/stats', authenticateToken, async (req, res) => {
   }
 });
 
+// Get recent activity for current user
+router.get('/activity', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const supabase = req.supabase;
+    
+    console.log('[Dashboard Activity] Fetching activity for user:', userId);
+    
+    const activities = [];
+
+    // Recent job posts
+    const { data: jobs } = await supabase
+      .from('job_posts')
+      .select('id, title, created_at')
+      .eq('posted_by', userId)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (jobs) {
+      jobs.forEach(job => {
+        activities.push({
+          type: 'job',
+          message: `You posted job: ${job.title}`,
+          date: job.created_at
+        });
+      });
+    }
+
+    // Recent help requests
+    const { data: helps } = await supabase
+      .from('help_requests')
+      .select('id, title, created_at')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (helps) {
+      helps.forEach(help => {
+        activities.push({
+          type: 'help',
+          message: `You submitted help request: ${help.title}`,
+          date: help.created_at
+        });
+      });
+    }
+
+    // Sort by date
+    activities.sort((a, b) => 
+      new Date(b.date) - new Date(a.date)
+    );
+
+    res.json({ 
+      success: true, 
+      data: activities.slice(0, 5) 
+    });
+  } catch (error) {
+    console.error('[Dashboard Activity] Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
