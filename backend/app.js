@@ -38,6 +38,8 @@ const visionRoutes = require('./routes/visionRoutes');
 const helpRequestRoutes = require('./routes/helpRequestRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const roleRoutes = require('./routes/roleRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -46,6 +48,8 @@ app.use('/api/visions', visionRoutes);
 app.use('/api/help-requests', helpRequestRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/events', eventRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
