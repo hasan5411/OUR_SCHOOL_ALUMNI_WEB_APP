@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const { supabase } = require('../config/database');
 
 class Event {
   // Create a new event
