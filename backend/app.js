@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const { supabase } = require('./config/database');
+const { supabase, isInitialized } = require('./config/database');
 
 const app = express();
 
@@ -21,9 +21,10 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Supabase client
+// Supabase client middleware
 app.use((req, res, next) => {
   req.supabase = supabase;
+  req.dbAvailable = isInitialized;
   next();
 });
 
@@ -56,7 +57,8 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV,
+    database: isInitialized ? 'connected' : 'disconnected'
   });
 });
 
