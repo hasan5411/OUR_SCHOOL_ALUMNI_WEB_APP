@@ -290,6 +290,10 @@ CREATE INDEX IF NOT EXISTS idx_vision_ideas_status ON vision_ideas(status);
 CREATE INDEX IF NOT EXISTS idx_vision_ideas_priority_level ON vision_ideas(priority_level);
 CREATE INDEX IF NOT EXISTS idx_vision_ideas_category ON vision_ideas(category);
 
+-- Ensure priority_level exists on existing vision_ideas tables
+ALTER TABLE vision_ideas ADD COLUMN IF NOT EXISTS priority_level VARCHAR(20) DEFAULT 'medium';
+CREATE INDEX IF NOT EXISTS idx_vision_ideas_priority_level ON vision_ideas(priority_level);
+
 CREATE INDEX IF NOT EXISTS idx_help_requests_created_by ON help_requests(created_by);
 CREATE INDEX IF NOT EXISTS idx_help_requests_status ON help_requests(status);
 CREATE INDEX IF NOT EXISTS idx_help_requests_help_type ON help_requests(help_type);

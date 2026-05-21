@@ -84,9 +84,9 @@ const rejectUser = async (req, res) => {
 const promoteToAdmin = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { reason } = req.body;
+    const requestingUserRole = req.user.roles?.name;
     
-    const result = await Role.promoteToAdmin(userId, reason, req.user.id);
+    const result = await Role.promoteToAdmin(userId, requestingUserRole);
     
     res.status(200).json({
       message: 'User promoted to admin successfully',
@@ -102,9 +102,9 @@ const promoteToAdmin = async (req, res) => {
 const demoteToMember = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { reason } = req.body;
+    const requestingUserRole = req.user.roles?.name;
     
-    const result = await Role.demoteToMember(userId, reason, req.user.id);
+    const result = await Role.demoteToMember(userId, requestingUserRole);
     
     res.status(200).json({
       message: 'Admin demoted to member successfully',
