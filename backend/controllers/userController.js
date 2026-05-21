@@ -1,10 +1,6 @@
 const User = require('../models/User');
-const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client for file uploads
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Note: Supabase client is injected via middleware in req.supabase
 
 // Get user profile
 const getProfile = async (req, res) => {
@@ -104,7 +100,7 @@ const uploadProfileImage = async (req, res) => {
     const filePath = `profile-images/${fileName}`;
 
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    const { data, error } = await req.supabase.storage
       .from('profile-images')
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
@@ -117,7 +113,7 @@ const uploadProfileImage = async (req, res) => {
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = req.supabase.storage
       .from('profile-images')
       .getPublicUrl(filePath);
 
@@ -247,7 +243,7 @@ const uploadCurrentUserProfileImage = async (req, res) => {
     const filePath = `profile-images/${fileName}`;
 
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    const { data, error } = await req.supabase.storage
       .from('profile-images')
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
@@ -260,7 +256,7 @@ const uploadCurrentUserProfileImage = async (req, res) => {
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = req.supabase.storage
       .from('profile-images')
       .getPublicUrl(filePath);
 

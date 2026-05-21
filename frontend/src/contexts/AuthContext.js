@@ -65,7 +65,8 @@ const authReducer = (state, action) => {
     case 'SET_USER':
       return {
         ...state,
-        user: action.payload,
+        user: action.payload.user,
+        token: action.payload.token,
         isAuthenticated: true
       };
     default:
@@ -94,7 +95,10 @@ export const AuthProvider = ({ children }) => {
     if (token && user) {
       dispatch({
         type: 'SET_USER',
-        payload: JSON.parse(user)
+        payload: {
+          user: JSON.parse(user),
+          token
+        }
       });
     }
   }, []);
