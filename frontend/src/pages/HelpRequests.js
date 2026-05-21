@@ -48,9 +48,17 @@ const HelpRequests = () => {
         limit: 20,
         ...filters
       });
-      setHelpRequests(data.help_requests || data);
-      if (data.pagination) {
-        setTotalPages(data.pagination.total_pages || 1);
+      const helpRequestsArray = Array.isArray(data.helpRequests)
+        ? data.helpRequests
+        : Array.isArray(data)
+        ? data
+        : Array.isArray(data.data?.helpRequests)
+        ? data.data.helpRequests
+        : [];
+      setHelpRequests(helpRequestsArray);
+      const pagination = data.pagination || data.data?.pagination;
+      if (pagination) {
+        setTotalPages(pagination.pages || pagination.total || 1);
       }
     } catch (err) {
       console.error('Error fetching help requests:', err);
